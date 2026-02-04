@@ -11,3 +11,7 @@ uv run python exporter.py \
     --profile GSL-Prod \ # the aws profile to use
     --output out/output.csv # the output file
 ```
+
+
+
+uv run python exporter.py --bucket dataplane-raw-events-production --prefix "data-plane/contextualizer/maliyo_safaricity_45d8b4-partition-0/" --profile gsl-prod --output out/cricket-manager.json

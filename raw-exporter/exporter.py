@@ -13,11 +13,13 @@ import json
 import sys
 import tempfile
 from datetime import datetime, timezone
+from bson.objectid import ObjectId
 from pathlib import Path
 
 import boto3
 import fastavro
 import msgpack
+
 
 
 def parse_args():
@@ -172,41 +174,56 @@ def process_avro_file(avro_path: Path) -> list[dict]:
             batch_id = data.get("batchID", "")
             sdk_version = data.get("sdkVersion", "")
 
-            # Process each event group
-            for event_group in data.get("eventGroups", []):
-                session_id = event_group.get("session_id", "")
-                device_id = event_group.get("device_id", "")
-                device_os = event_group.get("device_os", "")
-                device_model = event_group.get("device_model", "")
-                app_version = event_group.get("app_version", "")
+            # make a mongo id 
+            mongo_id = str(ObjectId())
 
-                # Process each event within the group
-                for event in event_group.get("events", []):
-                    timestamp_ms = event.get("timestamp", 0)
-                    event_timestamp = ms_to_utc_datetime(timestamp_ms) if timestamp_ms else ""
+            row = {
+                "_id": mongo_id,
+                "playerID": player_id,
+                "gameID": game_id,
+                "country": country,
+                "batchID": batch_id,
+                "sdkVersion": sdk_version,
+                "eventGroups": json.dumps(data.get("eventGroups", [])),
+            }
 
-                    payload = event.get("payload", {})
-                    payload_str = json.dumps(payload) if payload else ""
+            rows.append(row)
 
-                    row = {
-                        "playerID": player_id,
-                        "gameID": game_id,
-                        "country": country,
-                        "session_id": session_id,
-                        "device_id": device_id,
-                        "device_os": device_os,
-                        "device_model": device_model,
-                        "app_version": app_version,
-                        "event_id": event.get("id", ""),
-                        "event_name": event.get("event_name", ""),
-                        "event_timestamp": event_timestamp,
-                        "event_timestamp_ref_utc": event.get("timestamp_ref_utc", ""),
-                        "scene_name": event.get("scene_name", ""),
-                        "payload": payload_str,
-                        "batchID": batch_id,
-                        "sdkVersion": sdk_version,
-                    }
-                    rows.append(row)
+            # # Process each event group
+            # for event_group in data.get("eventGroups", []):
+            #     session_id = event_group.get("session_id", "")
+            #     device_id = event_group.get("device_id", "")
+            #     device_os = event_group.get("device_os", "")
+            #     device_model = event_group.get("device_model", "")
+            #     app_version = event_group.get("app_version", "")
+
+            #     # Process each event within the group
+            #     for event in event_group.get("events", []):
+            #         timestamp_ms = event.get("timestamp", 0)
+            #         event_timestamp = ms_to_utc_datetime(timestamp_ms) if timestamp_ms else ""
+
+            #         payload = event.get("payload", {})
+            #         payload_str = json.dumps(payload) if payload else ""
+
+            #         row = {
+            #             "playerID": player_id,
+            #             "gameID": game_id,
+            #             "country": country,
+            #             "session_id": session_id,
+            #             "device_id": device_id,
+            #             "device_os": device_os,
+            #             "device_model": device_model,
+            #             "app_version": app_version,
+            #             "event_id": event.get("id", ""),
+            #             "event_name": event.get("event_name", ""),
+            #             "event_timestamp": event_timestamp,
+            #             "event_timestamp_ref_utc": event.get("timestamp_ref_utc", ""),
+            #             "scene_name": event.get("scene_name", ""),
+            #             "payload": payload_str,
+            #             "batchID": batch_id,
+            #             "sdkVersion": sdk_version,
+            #         }
+            #         rows.append(row)
 
     if decode_failures > 0:
         print(f"  (skipped {decode_failures} records with decode failures)", file=sys.stderr)
@@ -243,6 +260,16 @@ def write_csv(rows: list[dict], output_path: str) -> None:
         writer = csv.DictWriter(f, fieldnames=fieldnames, quoting=csv.QUOTE_MINIMAL)
         writer.writeheader()
         writer.writerows(rows)
+
+
+def write_json(rows: list[dict], output_path: str) -> None:
+    """Write rows to JSON file."""
+    if not rows:
+        print("Warning: No rows to write", file=sys.stderr)
+        return
+
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(rows, f, indent=2, ensure_ascii=False)
 
 
 def main():
@@ -282,7 +309,7 @@ def main():
 
     # Write CSV
     print(f"\nWriting {len(all_rows)} total events to {args.output}")
-    write_csv(all_rows, args.output)
+    write_json(all_rows, args.output)
     print("Done!")
 
 
