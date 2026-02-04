@@ -1,2 +1,20 @@
 input/*
 output/*
+
+
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# MacOS files
+.DS_Store
+
+# ipynb checkpointer files
+*.ipynb_checkpoints/

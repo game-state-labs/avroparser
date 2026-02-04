@@ -1,0 +1,14 @@
+[project]
+name = "raw-exporter"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "boto3>=1.42.34",
+    "fastavro>=1.12.1",
+    "jupyterlab>=4.5.3",
+    "matplotlib>=3.10.8",
+    "msgpack>=1.1.2",
+    "pandas>=3.0.0",
+]
