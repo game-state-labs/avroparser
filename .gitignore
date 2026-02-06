@@ -18,3 +18,5 @@ wheels/
 
 # ipynb checkpointer files
 *.ipynb_checkpoints/
+
+vendor/
